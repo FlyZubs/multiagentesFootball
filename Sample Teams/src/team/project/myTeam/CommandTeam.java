@@ -6,7 +6,7 @@ import easy_soccer_lib.PlayerCommander;
 public class CommandTeam extends AbstractTeam {
 	
 public CommandTeam(String prefix) {
-	super("Team"+prefix, 8, true);
+	super("Team"+prefix, 8, false);
 }
 
 @Override
