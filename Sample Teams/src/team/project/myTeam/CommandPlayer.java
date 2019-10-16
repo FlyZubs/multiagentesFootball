@@ -78,7 +78,7 @@ private boolean isAlignToPoint(Vector2D point, double margin){
 
 private void dash(Vector2D point){
 	if(selfPerc.getPosition().distanceTo(point) <= 1) return;
-	if(!isAlignToPoint(point, 7)) turnToPoint(point);
+	if(!isAlignToPoint(point, 15)) turnToPoint(point);
 	commander.doDashBlocking(70);
 }
 
@@ -133,6 +133,9 @@ private void acaoGoleiro(long nextIteration) {
 				// posiciona
 				commander.doMoveBlocking(xInit, yInit);
 				break;
+			case KICK_OFF_LEFT:
+			case KICK_OFF_RIGHT:
+				dash(initPos);
 			case PLAY_ON:
 				ballX=fieldPerc.getBall().getPosition().getX();
 				ballY=fieldPerc.getBall().getPosition().getY();
@@ -159,6 +162,7 @@ private void acaoGoleiro(long nextIteration) {
 private void acaoZagueiro(long nextIteration, int pos) {
 	double xInit=-30, yInit=8*pos;
 	EFieldSide side = selfPerc.getSide();
+	EFieldSide enemySide = side.invert(side);
 	Vector2D initPos = new Vector2D(xInit*side.value(), yInit*side.value());
 	Vector2D ballPos, vTemp;
 	PlayerPerception pTemp;
@@ -169,6 +173,12 @@ private void acaoZagueiro(long nextIteration, int pos) {
 		switch (matchPerc.getState()) {
 			case BEFORE_KICK_OFF:
 				commander.doMoveBlocking(xInit, yInit);
+				break;
+			case KICK_OFF_LEFT:
+				dash(initPos);
+				break;
+			case KICK_OFF_RIGHT:
+				dash(initPos);
 				break;
 			case PLAY_ON:
 				if(isPointsAreClose(selfPerc.getPosition(),ballPos, 1)){
@@ -197,6 +207,12 @@ private void acaoZagueiro(long nextIteration, int pos) {
 					if(pTemp != null && pTemp.getUniformNumber() == selfPerc.getUniformNumber()){
 						// pega a bola
 						dash(ballPos);
+					}else if(isPointsAreClose(selfPerc.getPosition(), getClosestPlayerPoint(selfPerc.getPosition(), enemySide, 10).getPosition(), 8)) {
+						if(selfPerc.getPosition().distanceTo(initPos) > 10) {
+							dash(initPos);
+						}else {
+							dash(getClosestPlayerPoint(selfPerc.getPosition(), enemySide, 8).getPosition());					
+						}
 					}else if(!isPointsAreClose(selfPerc.getPosition(), initPos, 3)){
 						// recua
 						dash(initPos);
@@ -215,18 +231,26 @@ private void acaoZagueiro(long nextIteration, int pos) {
 
 
 private void acaoArmador(long nextIteration, int pos) {
-	double xInit=-20, yInit=20*pos;
+	double xInit=-15, yInit=15*pos;
 	EFieldSide side = selfPerc.getSide();
+	EFieldSide enemySide = side.invert(side);
 	Vector2D initPos = new Vector2D(xInit*side.value(), yInit*side.value());
 	Vector2D ballPos, vTemp;
 	PlayerPerception pTemp;
 	while (true) {
 		updatePerceptions();
 		ballPos = fieldPerc.getBall().getPosition();
-		ArrayList<PlayerPerception> myTeam = fieldPerc.getTeamPlayers(selfPerc.getSide());
+		ArrayList<PlayerPerception> myTeam = fieldPerc.getTeamPlayers(side);
+		ArrayList<PlayerPerception> enemyTeam = fieldPerc.getTeamPlayers(enemySide);
 		switch (matchPerc.getState()) {
 			case BEFORE_KICK_OFF:
 				commander.doMoveBlocking(xInit, yInit);
+				break;
+			case KICK_OFF_LEFT:
+				dash(initPos);
+				break;
+			case KICK_OFF_RIGHT:
+				dash(initPos);
 				break;
 			case PLAY_ON:
 				if(isPointsAreClose(selfPerc.getPosition(),ballPos, 1)){
@@ -248,14 +272,20 @@ private void acaoArmador(long nextIteration, int pos) {
 					
 					Vector2D vTempF = vTemp.sub(selfPerc.getPosition());
 					double intensity = ((vTempF.magnitude()*100)/40);
-					if(intensity > 50) intensity = 10;
+					if(intensity > 50) intensity = 15;
 					kickToPoint(vTemp, intensity);
 				}else{
 					pTemp = getClosestPlayerPoint(ballPos,side, 3);
 					if(pTemp != null && pTemp.getUniformNumber() == selfPerc.getUniformNumber()){
 						// pega a bola
 						dash(ballPos);
-					}else if(!isPointsAreClose(selfPerc.getPosition(), initPos, 3)){
+					}else if(isPointsAreClose(selfPerc.getPosition(), getClosestPlayerPoint(selfPerc.getPosition(), enemySide, 10).getPosition(), 8)) {
+						if(selfPerc.getPosition().distanceTo(initPos) > 10) {
+							dash(initPos);
+						}else {
+							dash(getClosestPlayerPoint(selfPerc.getPosition(), enemySide, 8).getPosition());					
+						}
+					}else if(!isPointsAreClose(selfPerc.getPosition(), initPos, 5)){
 						// recua
 						dash(initPos);
 					}else{
@@ -272,11 +302,12 @@ private void acaoArmador(long nextIteration, int pos) {
 }
 
 private void acaoAtacante(long nextIteration, int pos) {
-	double xInit=-10, yInit=8*pos;
+	double xInit=-7, yInit=8*pos;
 	EFieldSide side = selfPerc.getSide();
 	Vector2D initPos = new Vector2D(xInit*side.value(), yInit);
 	Vector2D goalPos = new Vector2D(50*side.value(), 0);
 	Vector2D ballPos;
+	Vector2D centerPos = new Vector2D(0,0);
 	PlayerPerception pTemp;
 	while (true) {
 		updatePerceptions();
@@ -285,6 +316,28 @@ private void acaoAtacante(long nextIteration, int pos) {
 			case BEFORE_KICK_OFF:
 				commander.doMoveBlocking(xInit, yInit);
 				break;
+			case KICK_OFF_LEFT:
+				if(side == EFieldSide.LEFT) {
+					pTemp = getClosestPlayerPoint(centerPos, side, 3);
+					if(pTemp.getUniformNumber() == 8) {
+						dash(centerPos);
+						kickToPoint(goalPos.multiply(-1), 40);						
+					}
+				}else {
+					dash(initPos);					
+				}
+				break;
+			case KICK_OFF_RIGHT:
+				if(side == EFieldSide.RIGHT) {
+					pTemp = getClosestPlayerPoint(centerPos, side, 3);
+					if(pTemp.getUniformNumber() == 8) {
+						dash(centerPos);
+						kickToPoint(goalPos.multiply(-1), 40);						
+					}
+				}else {
+					dash(initPos);					
+				}
+				break;
 			case PLAY_ON:
 				if(isPointsAreClose(selfPerc.getPosition(),ballPos, 1)){
 					if(isPointsAreClose(ballPos, goalPos, 30)){
@@ -292,18 +345,28 @@ private void acaoAtacante(long nextIteration, int pos) {
 						kickToPoint(goalPos, 100);
 					}else{
 						// conduz para o gol
-						kickToPoint(goalPos, 25);
+						kickToPoint(goalPos, 15);
 					}
 				}else{
 					pTemp = getClosestPlayerPoint(ballPos,side, 3);
-					if(pTemp != null && pTemp.getUniformNumber() == selfPerc.getUniformNumber()){
+					if(pTemp != null && pTemp.getUniformNumber() == selfPerc.getUniformNumber() ){
 						// pega a bola
 						dash(ballPos);
-					}else if(!isPointsAreClose(selfPerc.getPosition(),initPos, 3)){
+					}else if(pTemp != null && ((pTemp.getUniformNumber() == 7 )||pTemp.getUniformNumber() == 8 )){
+						if(isPointsAreClose(selfPerc.getPosition(),pTemp.getPosition(), 8)) {
+							dash(pTemp.getPosition().multiply(-1));								
+						}else if(isPointsAreClose(selfPerc.getPosition(),goalPos, 25)) {
+							turnToPoint(ballPos);
+						}else {
+							dash(goalPos);							
+						}
+					}
+					else if(!isPointsAreClose(selfPerc.getPosition(),initPos, 3)){
 						// recua
 						dash(initPos);
 					}else{
 						// olha para a bola
+						
 						turnToPoint(ballPos);
 					}
 				}

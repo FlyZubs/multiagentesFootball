@@ -2,6 +2,8 @@ package behavior_tree;
 
 import java.util.LinkedList;
 
+import bt_team.player.IfClosestPlayerToBall;
+
 public class Sequence<T> extends BTNode<T> {
 	private LinkedList<BTNode<T>> list;
 	
@@ -12,10 +14,6 @@ public class Sequence<T> extends BTNode<T> {
 	public Sequence(String name) {
 		super("SEQ-" + name);
 		this.list = new LinkedList<BTNode<T>>();
-	}
-	
-	public void add(BTNode<T> node) {
-		this.list.add(node);
 	}
 
 	@Override

@@ -5,10 +5,10 @@ import behavior_tree.BTStatus;
 import easy_soccer_lib.utils.Vector2D;
 
 
-public class GoGetBall extends BTNode<BTreePlayer> {
+public class GoGetBall extends BTNode<BTreePlayerGoleiro> {
 
 	@Override
-	public BTStatus tick(BTreePlayer agent) {
+	public BTStatus tick(BTreePlayerGoleiro agent) {
 		Vector2D ballPos = agent.fieldPerc.getBall().getPosition();
 		
 		//condicao desejada: perto da bola (dist < 3) 

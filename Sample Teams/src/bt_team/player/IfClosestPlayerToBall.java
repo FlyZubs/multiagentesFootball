@@ -8,10 +8,10 @@ import easy_soccer_lib.perception.FieldPerception;
 import easy_soccer_lib.perception.PlayerPerception;
 import easy_soccer_lib.utils.Vector2D;
 
-public class IfClosestPlayerToBall extends BTNode<BTreePlayer> {
+public class IfClosestPlayerToBall extends BTNode<BTreePlayerGoleiro> {
 
 	@Override
-	public BTStatus tick(BTreePlayer agent) {
+	public BTStatus tick(BTreePlayerGoleiro agent) {
 		PlayerPerception selfPerc = agent.selfPerc;
 		FieldPerception fieldPerc = agent.fieldPerc;
 		

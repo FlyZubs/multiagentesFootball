@@ -10,7 +10,7 @@ import easy_soccer_lib.utils.EFieldSide;
 import easy_soccer_lib.utils.Vector2D;
 
 
-public class BTreePlayer extends Thread {
+public class BTreePlayerZagueiro extends Thread {
 	final PlayerCommander commander;
 	
 	PlayerPerception selfPerc;
@@ -19,29 +19,36 @@ public class BTreePlayer extends Thread {
 	Vector2D homePosition;
 	Vector2D goalPosition;
 	
-	BTNode<BTreePlayer> btree;
+	BTNode<BTreePlayerZagueiro> btree;
 	
 	
-	public BTreePlayer(PlayerCommander player, Vector2D home) {
+	public BTreePlayerZagueiro(PlayerCommander player, Vector2D home) {
 		commander = player;
 		homePosition = home;
 		
 		btree = buildTree();
 	}
 
-	private BTNode<BTreePlayer> buildTree() {
-		Selector<BTreePlayer> raiz = new Selector<BTreePlayer>("RAIZ");
+	private BTNode<BTreePlayerZagueiro> buildTree() {
+		Selector<BTreePlayerZagueiro> raiz = new Selector<BTreePlayerZagueiro>("RAIZ");
 		
-		Sequence<BTreePlayer> attackTree = new Sequence<BTreePlayer>("Avanca-para-Gol");
+		Sequence<BTreePlayerZagueiro> goleiroTree = new Sequence<BTreePlayerZagueiro>("Chuta a bola pra longe");
+		goleiroTree.add(new DetectBallInArea());
+		
+		Sequence<BTreePlayerZagueiro> zagueiroTree = new Sequence<BTreePlayerZagueiro>("Defende e rouba a bola");
+		zagueiroTree.add(new IfClosestPlayerToBall());
+		zagueiroTree.add(new GoGetBall());
+		
+		Sequence<BTreePlayerZagueiro> attackTree = new Sequence<BTreePlayerZagueiro>("Avanca-para-Gol");
 		attackTree.add(new IfClosestPlayerToBall());
 		attackTree.add(new AdvanceWithBallToGoal());
 		attackTree.add(new KickToScore());
 
-		Sequence<BTreePlayer> deffensiveTree = new Sequence<BTreePlayer>("Rouba-Bola");
-		deffensiveTree.add(new IfClosestPlayerToBall());
-		deffensiveTree.add(new GoGetBall());
+		Sequence<BTreePlayerZagueiro> deffensiveTree = new Sequence<BTreePlayerZagueiro>("Rouba-Bola");
 		
-		//BTNode<BTPlayer> defaultTree = new ReturnToHome(); //fica como EXERCICIO
+		
+		//BTNode<BTreePlayer> defaultTree = new ReturnToHome(); //fica como EXERCICIO
+		//defaultTree
 		
 		raiz.add(attackTree);
 		raiz.add(deffensiveTree);

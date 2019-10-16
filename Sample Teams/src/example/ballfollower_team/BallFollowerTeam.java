@@ -7,7 +7,7 @@ import easy_soccer_lib.PlayerCommander;
 public class BallFollowerTeam extends AbstractTeam {
 
 	public BallFollowerTeam(String suffix) {
-		super("BallFollower" + suffix, 2, false);
+		super("BallFollower" + suffix, 8, false);
 	}
 
 	@Override
