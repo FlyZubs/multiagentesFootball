@@ -12,9 +12,9 @@ public class Main {
 public static void main(String[] args) {
 	try {
 		CommandTeam teamA = new CommandTeam("A");
-		CommandTeam teamB = new CommandTeam("B");
+		//CommandTeam teamB = new CommandTeam("B");
 		teamA.launchTeamAndServer();
-		teamB.launchTeam();
+		//teamB.launchTeam();
 	} catch (UnknownHostException e) {
 		System.out.println("Falha ao conectar.");
 	}
