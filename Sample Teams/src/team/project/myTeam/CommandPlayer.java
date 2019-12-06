@@ -17,7 +17,8 @@ public class CommandPlayer extends Thread {
 	private PlayerPerception selfPerc;
 	private FieldPerception fieldPerc;
 	private MatchPerception matchPerc;
-	private boolean ballPossession = false;
+	// private boolean hasKicked = false;
+	// private long timeKicked;
 
 	public CommandPlayer(PlayerCommander player) {
 		commander = player;
@@ -142,14 +143,6 @@ public class CommandPlayer extends Thread {
 		return np;
 	}
 
-	private boolean isBallPossession() {
-		return this.ballPossession;
-	}
-
-	private void setBallPossession(boolean ballPossession) {
-		this.ballPossession = ballPossession;
-	}
-
 	private void dash(Vector2D point, int speed) {
 		if (selfPerc.getPosition().distanceTo(point) <= 1)
 			return;
@@ -170,7 +163,7 @@ public class CommandPlayer extends Thread {
 			if (isPointsAreClose(np.getPosition(), point, margin))
 				return np;
 			for (PlayerPerception p : lp) {
-				if (p.getUniformNumber() != ignoreUniform) {
+				if (p.getUniformNumber() != ignoreUniform && p.getUniformNumber() != 1) {
 					if (p.getPosition() == null)
 						break;
 					if (isPointsAreClose(p.getPosition(), point, margin))
@@ -205,18 +198,19 @@ public class CommandPlayer extends Thread {
 
 		for (PlayerPerception player : myTeam) {
 			double playerDistance = player.getPosition().distanceTo(ballPos);
-			if (playerDistance > 1) {
+			if (playerDistance > 1 && player.getUniformNumber() != 1) {
 				if (playerDistance < closestDistance) {
 					for (PlayerPerception enPlayer : enemyTeam) {
 						if (player.getPosition().distanceTo(enPlayer.getPosition()) < 5) {
 							canPass = false;
+						} else {
+							canPass = true;
 						}
 					}
 					if (canPass) {
 						closestDistance = playerDistance;
 						closestPlayer = player;
 					}
-					canPass = true;
 				}
 			}
 		}
@@ -455,6 +449,20 @@ public class CommandPlayer extends Thread {
 					dash(bestDefenseSpot, 80);
 				}
 				break;
+			case FREE_KICK_FAULT_LEFT:
+				if (side == EFieldSide.RIGHT) {
+					dash(bestAttackSpot, 80);
+				} else {
+					dash(bestDefenseSpot, 80);
+				}
+				break;
+			case FREE_KICK_FAULT_RIGHT:
+				if (side == EFieldSide.LEFT) {
+					dash(bestAttackSpot, 80);
+				} else {
+					dash(bestDefenseSpot, 80);
+				}
+				break;
 			case KICK_OFF_LEFT:
 				dash(initPos, 80);
 				break;
@@ -463,7 +471,7 @@ public class CommandPlayer extends Thread {
 				break;
 			case PLAY_ON:
 				if (isPointsAreClose(selfPerc.getPosition(), ballPos, 1)) {
-					if (isPointsAreClose(ballPos, goalPos, 30)) {
+					if (isPointsAreClose(ballPos, goalPos, 25)) {
 						// chuta para o gol
 						Vector2D randomShot = new Vector2D(goalPos.getX(), goalPos.getY() + (Math.random() * 3));
 						kickToPoint(randomShot, 90);
@@ -473,9 +481,9 @@ public class CommandPlayer extends Thread {
 						if (dist < 10) {
 							closestPlayer = getClosestFreePlayer(myTeam, enemyTeam, ballPos);
 							if (closestPlayer != selfPerc) {
-								passBall(closestPlayer, 25);
+								passBall(closestPlayer, 40);
 							} else {
-								passBall(getClosestPlayerPoint(ballPos, side, 5, selfPerc.getUniformNumber()), 40);
+								passBall(getClosestPlayerPoint(ballPos, side, 5, selfPerc.getUniformNumber()), 55);
 							}
 						} else {
 							kickToPoint(goalPos, 25);
@@ -493,7 +501,7 @@ public class CommandPlayer extends Thread {
 								.sum(new Vector2D(1 * side.value(), 0)), 80);
 					} else {
 						// olha para a bola
-						if (ballPos.getX() < 15 * enemySide.value()) {
+						if (ballPos.getX() < -20 * side.value()) {
 							if (enemyIsCloserThanFriend(ballPos, side, enemySide, 5)) {
 								dash(ballPos, 80);
 							}
@@ -638,7 +646,7 @@ public class CommandPlayer extends Thread {
 					pTemp = getClosestPlayerPoint(ballPos, side, 3);
 					if (pTemp.getUniformNumber() == selfPerc.getUniformNumber()) {
 						dash(ballPos, 80);
-						closestPlayer = getClosestPlayerPoint(goalPos, side, 5);
+						closestPlayer = getClosestPlayerPoint(goalPos.multiply(-1), side, 5);
 						passBall(closestPlayer, 60);
 					} else {
 						dash(bestAttackSpot, 80);
@@ -652,11 +660,25 @@ public class CommandPlayer extends Thread {
 					pTemp = getClosestPlayerPoint(ballPos, side, 3);
 					if (pTemp.getUniformNumber() == selfPerc.getUniformNumber()) {
 						dash(ballPos, 80);
-						closestPlayer = getClosestPlayerPoint(goalPos, side, 5);
+						closestPlayer = getClosestPlayerPoint(goalPos.multiply(-1), side, 5);
 						passBall(closestPlayer, 60);
 					} else {
 						dash(bestAttackSpot, 80);
 					}
+				} else {
+					dash(bestDefenseSpot, 80);
+				}
+				break;
+			case FREE_KICK_FAULT_LEFT:
+				if (side == EFieldSide.RIGHT) {
+					dash(bestAttackSpot, 80);
+				} else {
+					dash(bestDefenseSpot, 80);
+				}
+				break;
+			case FREE_KICK_FAULT_RIGHT:
+				if (side == EFieldSide.LEFT) {
+					dash(bestAttackSpot, 80);
 				} else {
 					dash(bestDefenseSpot, 80);
 				}
@@ -669,23 +691,27 @@ public class CommandPlayer extends Thread {
 				break;
 			case PLAY_ON:
 				if (isPointsAreClose(selfPerc.getPosition(), ballPos, 1)) {
-					if (isPointsAreClose(ballPos, goalPos, 30)) {
+					if (isPointsAreClose(ballPos, goalPos, 25)) {
 						// chuta para o gol
 						Vector2D randomShot = new Vector2D(goalPos.getX(), goalPos.getY() + (Math.random() * 3));
 						kickToPoint(randomShot, 90);
 					} else {
-						double dist = selfPerc.getPosition()
-								.distanceTo(getClosestPlayerPoint(ballPos, enemySide, 10).getPosition());
-						if (dist < 5) {
-							closestPlayer = getClosestFreePlayer(myTeam, enemyTeam, ballPos);
-							if (closestPlayer != selfPerc) {
-								passBall(closestPlayer, 25);
-							} else {
-								passBall(getClosestPlayerPoint(selfPerc.getPosition(), side, 5,
-										selfPerc.getUniformNumber()), 40);
-							}
-						} else {
+						if (ballPos.getX() > 5 * side.value()) {
 							kickToPoint(goalPos, 25);
+						} else {
+							double dist = selfPerc.getPosition()
+									.distanceTo(getClosestPlayerPoint(ballPos, enemySide, 10).getPosition());
+							if (dist < 5) {
+								closestPlayer = getClosestFreePlayer(myTeam, enemyTeam, ballPos);
+								if (closestPlayer != selfPerc) {
+									passBall(closestPlayer, 25);
+								} else {
+									passBall(getClosestPlayerPoint(selfPerc.getPosition(), side, 5,
+											selfPerc.getUniformNumber()), 40);
+								}
+							} else {
+								kickToPoint(goalPos, 25);
+							}
 						}
 					}
 				} else {
@@ -744,9 +770,9 @@ public class CommandPlayer extends Thread {
 					pTemp = getClosestPlayerPoint(centerPos, side, 5);
 					if (pTemp.getUniformNumber() == selfPerc.getUniformNumber()) {
 						dash(centerPos, 80);
-						closestPlayer = getClosestPlayerPoint(selfPerc.getPosition(), side, 15,
-								selfPerc.getUniformNumber());
-						passBall(closestPlayer, 25);
+						kickToPoint(goalPos.multiply(-1), 50);
+					} else {
+						dash(initPos, 80);
 					}
 				} else {
 					dash(initPos, 80);
@@ -757,9 +783,9 @@ public class CommandPlayer extends Thread {
 					pTemp = getClosestPlayerPoint(centerPos, side, 3);
 					if (pTemp.getUniformNumber() == selfPerc.getUniformNumber()) {
 						dash(centerPos, 80);
-						closestPlayer = getClosestPlayerPoint(selfPerc.getPosition(), side, 15,
-								selfPerc.getUniformNumber());
-						passBall(closestPlayer, 25);
+						kickToPoint(goalPos.multiply(-1), 50);
+					} else {
+						dash(initPos, 80);
 					}
 				} else {
 					dash(initPos, 80);
@@ -885,12 +911,28 @@ public class CommandPlayer extends Thread {
 					dash(bestDefenseSpot, 80);
 				}
 				break;
+			case FREE_KICK_FAULT_LEFT:
+				if (side == EFieldSide.RIGHT) {
+					dash(bestAttackSpot, 80);
+				} else {
+					dash(bestDefenseSpot, 80);
+				}
+				break;
+			case FREE_KICK_FAULT_RIGHT:
+				if (side == EFieldSide.LEFT) {
+					dash(bestAttackSpot, 80);
+				} else {
+					dash(bestDefenseSpot, 80);
+				}
+				break;
 			case PLAY_ON:
 				if (isPointsAreClose(selfPerc.getPosition(), ballPos, 1)) {
-					if (isPointsAreClose(ballPos, goalPos, 30)) {
+					if (isPointsAreClose(ballPos, goalPos, 25)) {
 						// chuta para o gol
 						Vector2D randomShot = new Vector2D(goalPos.getX(), goalPos.getY() + (Math.random() * 3));
 						kickToPoint(randomShot, 90);
+					} else if (goalPos.getX() > 5 * side.value()) {
+						kickToPoint(goalPos, 25);
 					} else if (getClosestPlayerPoint(goalPos, side, 10).getUniformNumber() != selfPerc
 							.getUniformNumber()
 							&& isPointsAreClose(ballPos, getClosestPlayerPoint(ballPos, enemySide, 10).getPosition(),
